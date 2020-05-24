@@ -2,305 +2,367 @@ import java.util.ArrayList;
 import java.util.Scanner;
 
 public class GuestList {
-	private final String eventName; // name of event
+	private final String eventName = "DevEvent"; // name of event
 	private int maxParticipants; // number of participants to event
-	private ArrayList<Guest> participantsList; // list of participants type Guest
+	private ArrayList<Guest> participantsList; // list of participants type // Guest
 	private ArrayList<Guest> waitingList; // list of waiting participants type Guest
-	Scanner sc = new Scanner(System.in);
 
-	//constructor
-	public GuestList(String eventName, int maxParticipants) {
-		this.eventName = eventName;
+	// constructor create a guest list & a wait list
+	public GuestList(int maxParticipants) {
 		this.maxParticipants = maxParticipants;
 		this.participantsList = new ArrayList<Guest>();
 		this.waitingList = new ArrayList<Guest>();
 	}
 
-	//method of add a guest
-	public int add(Guest guest) {
+	// method to print list of commands
+	public void help() {
 
-		System.out.println("Se adauga o noua persoana..");
-		System.out.println("Introduceti numele de familie:");
-		String lastName = sc.nextLine();
-		System.out.println("Introduceti prenumele:");
-		String firstName = sc.nextLine();
-		System.out.println("Introduceti emailul:");
-		String email = sc.nextLine();
-		System.out.println("Introduceti telefonul:");
-		String numberPhone = sc.nextLine();
+		System.out.println("Asteapta comanda: (help - Afiseaza lista de comenzi)");
 
-		if ((!check(guest, lastName) && !check(guest, firstName)) && participantsList.size() <= maxParticipants) {
-			participantsList.add(guest);
-			System.out.println("Felicitari! Locul tau la eveniment este confirmat. Te asteptam!");
-			return 0;
-		} else if ((!check(guest, lastName) && !check(guest, firstName))
-				&& participantsList.size() >= maxParticipants) {
-			waitingList.add(guest);
-			System.out.println("Te-ai inscris cu succes in lista de asteptare si ai primit numarul de ordine "
-					+ waitingList.lastIndexOf(guest) + ". Te vom notifica daca un loc devine disponibil");
-			return waitingList.lastIndexOf(guest);
+		System.out.println("help - Afiseaza aceasta lista de comenzi\r\n"
+				+ "add - Adauga o noua persoana (inscriere)\r\n"
+				+ "check - Verifica daca o persoana este inscrisa la eveniment\r\n"
+				+ "remove - Sterge o persoana existenta din lista\r\n"
+				+ "update - Actualizeaza detaliile unei persoane\r\n"
+				+ "guests - Lista de persoane care participa la eveniment\r\n"
+				+ "waitlist - Persoanele din lista de asteptare\r\n" + "available - Numarul de locuri libere\r\n"
+				+ "guests_no - Numarul de persoane care participa la eveniment\r\n"
+				+ "waitlist_no - Numarul de persoane din lista de asteptare\r\n"
+				+ "subscribe_no - Numarul total de persoane inscrise\r\n"
+				+ "search - Cauta toti invitatii conform sirului de caractere introdus\r\n"
+				+ "quit - Inchide aplicatia");
+	}
+
+	// check
+	public boolean check(String option, String filter) {
+		if (option.equals("1")) {
+			String[] fullName = filter.split(",");
+			String lastName = fullName[0];
+			String firstName = fullName[1];
+			for (int i = 0; i < participantsList.size(); i++) {
+				if (participantsList.get(i).checkByName(lastName, firstName)) {
+					return true;
+				}
+			}
+			for (int i = 0; i < waitingList.size(); i++) {
+				if (waitingList.get(i).checkByName(lastName, firstName)) {
+					return true;
+				}
+			}
+		} else if (option.equals("2")) {
+			for (int i = 0; i < participantsList.size(); i++) {
+				if (participantsList.get(i).checkByEmail(filter)) {
+					return true;
+				}
+			}
+			for (int i = 0; i < waitingList.size(); i++) {
+				if (waitingList.get(i).checkByEmail(filter)) {
+					return true;
+				}
+			}
+		} else if (option.equals("3")) {
+			for (int i = 0; i < participantsList.size(); i++) {
+				if (participantsList.get(i).checkByPhoneNumber(filter)) {
+					return true;
+				}
+			}
+			for (int i = 0; i < waitingList.size(); i++) {
+				if (waitingList.get(i).checkByPhoneNumber(filter)) {
+					return true;
+				}
+			}
 		} else {
-			System.out.println("Te-ai inscris deja la eveniment!");
+			System.out.println("Option Error!");
+		}
+		return false;
+	}
+
+	// 1. method add a enroll guest
+	public int add(String option, Guest guest) {
+		String fullName = guest.getLastName() + "," + guest.getFirstName();
+		String email = guest.getEmail();
+		String phoneNumber = guest.getPhoneNumber();
+		String filter = "";
+		if (option.equals("1")) {
+			filter = fullName;
+		} else if (option.equals("2")) {
+			filter = email;
+		} else if (option.equals("3")) {
+			filter = phoneNumber;
+		}
+		if (check(option, filter)) {
 			return -1;
-
+		} else if (participantsList.size() < maxParticipants) {
+			this.participantsList.add(guest);
+			System.out.println("[ " + guest.getFirstName() + " " + guest.getLastName()
+					+ "] Felicitari! Locul tau la eveniment este confirmat. Te asteptam!");
+			return 0;
+		} else {
+			this.waitingList.add(guest);
+			System.out.println("Te-ai inscris cu succes in lista de asteptare si ai primit numarul de ordine "
+					+ (waitingList.indexOf(guest) + 1) + ". Te vom notifica daca un loc devine disponibil");
+			return (this.waitingList.indexOf(guest) + 1);
 		}
+
 	}
 
-	// method of search - return true if person is check
-	public boolean checkByName(String lastName, String firstName) {
+	// method remove
 
-		for (int i = 0; i < participantsList.size(); i++) {
-			if (participantsList.get(i).getFirstName().equals(firstName)
-					&& participantsList.get(i).getLastName().equals(lastName)) {
-				return true;
+	public boolean remove(String option, String filter) {
+		if (!check(option, filter)) {
+			System.out.println("Nu exista persoana");
+			return false;
+		} else {
+			if (option.equals("1")) {
+				String[] fullName = filter.split(",");
+				String lastName = fullName[0];
+				String firstName = fullName[1];
+				for (int i = 0; i < participantsList.size(); i++) {
+					if (participantsList.get(i).checkByName(lastName, firstName)) {
 
-			}
-		}
-		for (int i = 0; i < waitingList.size(); i++) {
-			if (waitingList.get(i).getFirstName().equals(firstName)
-					&& waitingList.get(i).getLastName().equals(lastName)) {
-				return true;
+						participantsList.remove(participantsList.get(i));
+						System.out.println("Persoana a fost stearsa cu succes!");
+						if (waitingList.size() > 0) {
+							System.out.println(
+									"[ " + waitingList.get(0).getFirstName() + " " + waitingList.get(0).getLastName()
+											+ "] Felicitari! Locul tau la eveniment este confirmat. Te asteptam!");
+							participantsList.add(waitingList.get(0));
+
+						}
+						return true;
+
+					}
+				}
+				for (int i = 0; i < waitingList.size(); i++) {
+					if (waitingList.get(i).checkByName(lastName, firstName)) {
+						waitingList.remove(waitingList.get(i));
+						System.out.println("Persoana a fost stearsa cu succes!");
+						return true;
+					}
+				}
+			} else if (option.equals("2")) {
+				for (int i = 0; i < participantsList.size(); i++) {
+					if (participantsList.get(i).checkByEmail(filter)) {
+
+						participantsList.remove(participantsList.get(i));
+						System.out.println("Persoana a fost stearsa cu succes!");
+						if (waitingList.size() > 0) {
+							System.out.println(
+									"[ " + waitingList.get(0).getFirstName() + " " + waitingList.get(0).getLastName()
+											+ "] Felicitari! Locul tau la eveniment este confirmat. Te asteptam!");
+							participantsList.add(waitingList.get(0));
+
+						}
+						return true;
+
+					}
+				}
+				for (int i = 0; i < waitingList.size(); i++) {
+					if (waitingList.get(i).checkByEmail(filter)) {
+						waitingList.remove(waitingList.get(i));
+						System.out.println("Persoana a fost stearsa cu succes!");
+						return true;
+					}
+				}
+			} else if (option.equals("3")) {
+				for (int i = 0; i < participantsList.size(); i++) {
+					if (participantsList.get(i).checkByPhoneNumber(filter)) {
+
+						participantsList.remove(participantsList.get(i));
+						System.out.println("Persoana a fost stearsa cu succes!");
+						if (waitingList.size() > 0) {
+							System.out.println(
+									"[ " + waitingList.get(0).getFirstName() + " " + waitingList.get(0).getLastName()
+											+ "] Felicitari! Locul tau la eveniment este confirmat. Te asteptam!");
+							participantsList.add(waitingList.get(0));
+
+						}
+						return true;
+
+					}
+				}
+				for (int i = 0; i < waitingList.size(); i++) {
+					if (waitingList.get(i).checkByPhoneNumber(filter)) {
+						waitingList.remove(waitingList.get(i));
+						System.out.println("Persoana a fost stearsa cu succes!");
+						return true;
+					}
+				}
 			}
 		}
 
 		return false;
 	}
 
-	//metod of search a person by email
-	public boolean checkByEmail(String email) {
-		for (int i = 0; i < participantsList.size(); i++) {
-			if (participantsList.get(i).getEmail().equals(email)) {
-				return true;
-			}
-		}
-		for (int i = 0; i < waitingList.size(); i++) {
-			if (waitingList.get(i).getEmail().equals(email)) {
+	// update method
+	public boolean update(String searchOption, String filter, String updateOption, String updateText) {
+		if (!check(searchOption, filter)) {
+			System.out.println("Nu exista persoana");
+			return false;
+		} else {
+			if (searchOption.equals("1")) {
+				String[] fullName = filter.split(",");
+				String lastName = fullName[0];
+				String firstName = fullName[1];
+				for (int i = 0; i < participantsList.size(); i++) {
 
+					if (participantsList.get(i).checkByName(lastName, firstName)) {
+						update(updateOption, updateText, participantsList.get(i));
+						return true;
+
+					}
+				}
+				for (int i = 0; i < waitingList.size(); i++) {
+					if (waitingList.get(i).checkByName(lastName, firstName)) {
+						update(updateOption, updateText, waitingList.get(i));
+						return true;
+					}
+				}
+			} else if (searchOption.equals("2")) {
+				for (int i = 0; i < participantsList.size(); i++) {
+					if (participantsList.get(i).checkByEmail(filter)) {
+						update(updateOption, updateText, participantsList.get(i));
+						return true;
+					}
+				}
+				for (int i = 0; i < waitingList.size(); i++) {
+					if (waitingList.get(i).checkByEmail(filter)) {
+						update(updateOption, updateText, waitingList.get(i));
+						return true;
+					}
+				}
+			} else if (searchOption.equals("3")) {
+				for (int i = 0; i < participantsList.size(); i++) {
+					if (participantsList.get(i).checkByPhoneNumber(filter)) {
+						update(updateOption, updateText, participantsList.get(i));
+						return true;
+					}
+				}
+				for (int i = 0; i < waitingList.size(); i++) {
+					if (waitingList.get(i).checkByPhoneNumber(filter)) {
+						update(updateOption, updateText, waitingList.get(i));
+
+						return true;
+					}
+				}
 			}
 		}
 
 		return false;
+	}
+
+	public void update(String updateOption, String updateText, Guest guest) {
+		if (updateOption.equals("1")) {
+			guest.setLastName(updateText);
+		} else if (updateOption.equals("2")) {
+			guest.setFirstName(updateText);
+		} else if (updateOption.equals("3")) {
+			guest.setEmail(updateText);
+		} else if (updateOption.equals("4")) {
+			guest.setPhoneNumber(updateText);
+		}
 
 	}
 	
-	//metod of search a person by phone
-	public boolean checkByPhone(String numberPhone) {
+	//method of print a participant list
+	public void guests () {
+		System.out.println("Lista de participanti este:");
+		if(participantsList.size() == 0) {
+			System.out.println("Nu exista persoane inscrise la eveniment!");
+		}
+		
 		for (int i = 0; i < participantsList.size(); i++) {
-			if (participantsList.get(i).getPhoneNumber().equals(numberPhone)) {
-				return true;
+		System.out.println("Prenume: " + participantsList.get(i).getFirstName() + " , "
+							+ " Nume: " + participantsList.get(i).getLastName() + " , "
+							+ " Email: " + participantsList.get(i).getEmail() + " , "
+							+ " Telefon: " + participantsList.get(i).getPhoneNumber());
+		}
+	}
+	
+	//method of print a waiting list
+		public void waitlist () {
+			System.out.println("Lista de asteptare este:");
+			if(waitingList.size() == 0) {
+				System.out.println("Nu exista persoane in lista de asteptare!");
 			}
-		}
-		for (int i = 0; i < waitingList.size(); i++) {
-			if (waitingList.get(i).getPhoneNumber().equals(numberPhone)) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	//metod of search a person by option
-	public boolean check(Guest guest, String filter) {
-		if (filter == "1") {
-			checkByName(guest.getFirstName(), guest.getLastName());
-			return true;
-		} else if (filter == "2") {
-			checkByEmail(guest.getEmail());
-			return true;
-		} else if (filter == "3") {
-			checkByPhone(guest.getPhoneNumber());
-			return true;
-		}
-
-		return false;
-	}
-
-	// method of delete a person from list
-	public boolean remove(Guest guest) {
-		System.out.println("Se sterge o persoana existenta din lista…");
-		System.out.println("Alege modul de autentificare, tastand:\r\n" + "\"1\" - Nume si prenume\r\n"
-				+ "\"2\" - Email\r\n" + "\"3\" - Numar de telefon (format \"+40733386463\")");
-		String option = sc.nextLine();
-
-		if (option == "1") {
-			System.out.println("Introduceti numele:");
-			String lastName = sc.nextLine();
-			String firstName = sc.nextLine();
-			if (lastName.equals(guest.getLastName()) && firstName.equals(guest.getFirstName())) {
-				removeByName(guest.getFirstName(), guest.getLastName());
-			}
-
-		} else if (option == "2") {
-			System.out.println("Introduceti email:");
-			String email = sc.nextLine();
-			if (email.equals(guest.getEmail())) {
-				removeByEmail(guest.getEmail());
-			}
-		} else if (option == "3") {
-			System.out.println("Introduceti numarul de telefon:");
-			String phoneNumber = sc.nextLine();
-			if (phoneNumber.equals(guest.getPhoneNumber())) {
-				removeByPhoneNumber(guest.getPhoneNumber());
-			}
-		}
-		return false;
-
-	}
-
-	// method of delete a person from list by Name
-	public boolean removeByName(String firstName, String lastName) {
-		if (checkByName(firstName, lastName)) {
-
-			System.out.println("Stergerea persoanei s-a realizat cu succes");
-			return true;
-		}
-		System.out.println("eroare: persoana nu era inscrisa");
-		return false;
-	}
-
-	// method of delete a person from list by Email
-	public boolean removeByEmail(String email) {
-		if (checkByEmail(email)) {
-			System.out.println("Stergerea persoanei s-a realizat cu succes");
-			return true;
-		}
-		System.out.println("eroare: persoana nu era inscrisa");
-		return false;
-	}
-
-	// method of delete a person from list by phone
-	public boolean removeByPhoneNumber(String phoneNumber) {
-		if (checkByPhone(phoneNumber)) {
-			System.out.println("Stergerea persoanei s-a realizat cu succes");
-			return true;
-		}
-		System.out.println("eroare: persoana nu era inscrisa");
-		return false;
-	}
-
-	//method update date a person
-	public boolean update(Guest guest) {
-		System.out.println("Se actualizeaza detaliile unei persoane…");
-		System.out.println("Alege modul de autentificare, tastand:\r\n" + "\"1\" - Nume si prenume\r\n"
-				+ "\"2\" - Email\r\n" + "\"3\" - Numar de telefon (format \"+40733386463\")");
-
-		String option = sc.nextLine();
-
-		if (option == "1") {
-			System.out.println("Introduceti numele:");
-			String lastName = sc.nextLine();
-			String firstName = sc.nextLine();
-			checkByName(lastName, firstName);
-			return true;
-		} else if (option == "2") {
-			System.out.println("Introduceti emailul:");
-			String email = sc.nextLine();
-			checkByEmail(email);
-			return true;
-		} else if (option == "3") {
-			System.out.println("Introduceti numarul de telefon:");
-			String phoneNumber = sc.nextLine();
-			checkByPhone(phoneNumber);
-			return true;
-		}
-
-		System.out.println("Alege campul de actualizat, tastand:\r\n" + "\"1\" - Nume\r\n" + "\"2\" - Prenume\r\n"
-				+ "\"3\" - Email\r\n" + "\"4\" - Numar de telefon (format \"+40733386463\")");
-
-		String field = sc.nextLine();
-
-		if (field == "1") {
 			
-			String firstName = sc.nextLine();
-			updateByFirstName(firstName, guest.getLastName());
-		} else if (field == "2") {
-			String lastName = sc.nextLine();
-			updateByLastName(guest.getFirstName(), lastName);
-		} else if (field == "3") {
-			String email = sc.nextLine();
-			updateByEmail(email);
-		} else if (field == "4") {
-			String phoneNumber = sc.nextLine();
-			updateByPhone(phoneNumber);
+			for (int i = 0; i < waitingList.size(); i++) {
+			System.out.println("Prenume: " + waitingList.get(i).getFirstName() + " , "
+					+ " Nume: " + waitingList.get(i).getLastName() + " , "
+					+ " Email: " + waitingList.get(i).getEmail() + " , "
+					+ " Telefon: " + waitingList.get(i).getPhoneNumber());
+			}
+		}
+		
+	//method of return number of free sets to event
+		public int available(){
+			System.out.print("Locuri ramase la eveniment: ");
+			return maxParticipants - participantsList.size();
+		}
+		
+		//method returns number of participants to event
+		public int guests_no() {
+			System.out.print("Numarul de participanti: ");
+			return participantsList.size();
+		}
+		
+		//method returns number of enroll people in waiting list
+		public int waitlist_no() {
+			System.out.print("Numarul de persoane aflate pe lista de asteptare: ");
+			return waitingList.size();
+		}
+		
+		//method returns number of all guests enroll to event
+		public int subscribe_no() {
+			System.out.print("Numarul total de persoane inscrise: ");
+			return participantsList.size() + waitingList.size();
+		}
+		
+		//method search all guests by substring
+		public boolean search (String subText) {
+			for (int i = 0; i < participantsList.size(); i++) {
+				if (participantsList.get(i).getLastName().contains(subText)) {
+					System.out.println("Contactul contine Nume: " + participantsList.get(i).getLastName());
+					return true;
+				}
+				else if (participantsList.get(i).getFirstName().contains(subText)) {
+					System.out.println("Contactul contine Prenume: " + participantsList.get(i).getFirstName());
+					return true;
+				}
+				else if (participantsList.get(i).getEmail().contains(subText)) {
+					System.out.println("Contactul contine Email: " + participantsList.get(i).getEmail());
+					return true;
+				}
+				else if (participantsList.get(i).getPhoneNumber().contains(subText)) {
+					System.out.println("Contactul contine Telefon: " + participantsList.get(i).getPhoneNumber());
+					return true;
+				}
+			}
+			for (int i = 0; i < waitingList.size(); i++) {
+				if (waitingList.get(i).getLastName().contains(subText)) {
+					System.out.println("Contactul contine Nume :" + waitingList.get(i).getLastName());
+					return true;
+				}
+				else if (waitingList.get(i).getFirstName().contains(subText)) {
+					System.out.println("Contactul contine Prenume: " + waitingList.get(i).getFirstName());
+					return true;
+				}
+				else if (waitingList.get(i).getEmail().contains(subText)) {
+					System.out.println("Contactul contine Email: " + waitingList.get(i).getEmail());
+					return true;
+				}
+				else if (waitingList.get(i).getPhoneNumber().contains(subText)) {
+					System.out.println("Contactul contine Telefon: " + waitingList.get(i).getPhoneNumber());
+					return true;
+				}
+			}
+			System.out.println("Nu exista persoana cu datele pe care le cautati!");
+			return false;
+		}
+		
+		//method of quit aplication
+		public void quit() {
+			System.out.println("Aplicatia se inchide..");
 		}
 
-		return false;
-	}
-
-	//method update a firstName person
-	public boolean updateByFirstName(String firstName, String lastName) {
-		System.out.println("Introduceti prenumele");
-		String firstNameChanged = sc.nextLine();
-		for (int i = 0; i < participantsList.size(); i++) {
-			if (checkByName(firstName, lastName)) {
-				participantsList.get(i).setFirstName(firstNameChanged);;
-				return true;
-			}
-		}
-		for (int i = 0; i < waitingList.size(); i++) {
-			if (checkByName(firstName, lastName)) {
-				waitingList.get(i).setFirstName(firstNameChanged);
-				return true;
-			}
-		}
-		return false;
-	}
-
-	//method update a lastname person
-	public boolean updateByLastName(String firstName, String lastName) {
-		System.out.println("Introduceti numele de familie");
-		String lastNameChanged = sc.nextLine();
-		for (int i = 0; i < participantsList.size(); i++) {
-			if (checkByName(firstName, lastName)) {
-				participantsList.get(i).setLastName(lastNameChanged);
-				return true;
-			}
-		}
-		for (int i = 0; i < waitingList.size(); i++) {
-			if (checkByName(firstName, lastName)) {
-				waitingList.get(i).setLastName(lastNameChanged);
-				return true;
-			}
-		}
-		return false;
-	}
-
-	//method update a email person
-	public boolean updateByEmail(String email) {
-		System.out.println("Introduceti emailul:");
-		String emailChanged = sc.nextLine();
-		for (int i = 0; i < participantsList.size(); i++) {
-			if (checkByEmail(email)) {
-				participantsList.get(i).setEmail(emailChanged);
-				;
-				return true;
-			}
-		}
-		for (int i = 0; i < waitingList.size(); i++) {
-			if (checkByEmail(email)) {
-				waitingList.get(i).setEmail(emailChanged);
-				return true;
-			}
-		}
-		return false;
-	}
-
-	//method update a phone person
-	public boolean updateByPhone(String phoneNumber) {
-		System.out.println("Introduceti nr. de telefon:");
-		String phoneNumberChanged = sc.nextLine();
-		for (int i = 0; i < participantsList.size(); i++) {
-			if (checkByPhone(phoneNumber)) {
-				participantsList.get(i).setPhoneNumber(phoneNumberChanged);
-				return true;
-			}
-		}
-		for (int i = 0; i < waitingList.size(); i++) {
-			if (checkByPhone(phoneNumber)) {
-				waitingList.get(i).setPhoneNumber(phoneNumberChanged);
-				return true;
-			}
-		}
-		return false;
-
-	}
 }

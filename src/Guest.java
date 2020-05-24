@@ -1,3 +1,4 @@
+import java.util.Scanner;
 
 public class Guest {
 	private String lastName;
@@ -11,11 +12,7 @@ public class Guest {
 		this.email = email;
 		this.phoneNumber = phoneNumber;
 	}
-	
-	public Guest() {
-		
-	}
-	
+			
 	// getter and setters for each field
 	public String getFirstName() {
 		return this.firstName;
@@ -47,6 +44,19 @@ public class Guest {
 	
 	public void setPhoneNumber(String phoneNumber) {
 		this.phoneNumber = phoneNumber;
+	}
+	
+	//method of check 
+	public boolean checkByName(String lastName, String firstName) {
+		return this.getLastName().equals(lastName) && this.getFirstName().equals(firstName);
+	}
+	
+	public boolean checkByEmail(String email) {
+		return this.getEmail().equals(email);
+	}
+	
+	public boolean checkByPhoneNumber(String phoneNumber) {
+		return this.phoneNumber.equals(phoneNumber);
 	}
 
 }
